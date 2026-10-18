@@ -15,7 +15,7 @@ from .filters import ProductFilter
 # COLLECTION CLASSES
 
 class CollectionViewSet(ModelViewSet):
-    queryset = Collection.objects.annotate(product_count=Count('products')).all()
+    queryset = Collection.objects.annotate(product_count=Count('products')).all().order_by('id')
     serializer_class = CollectionSerializer
     permission_classes = [IsAdminOrReadOnly]
 

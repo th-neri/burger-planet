@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'djoser',
     'core',
     'store',
@@ -49,7 +50,12 @@ SIMPLE_JWT = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
+    'SERIALIZERS': {
+        # customized user serializer to add fields for when i create a new user
+        'user_create': 'core.serializers.CustomUserCreateSerializer',
+    }
 }
+
 
 # to set off User model to our custom model User(AbstractUser)
 AUTH_USER_MODEL = 'core.User'
