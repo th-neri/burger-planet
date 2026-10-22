@@ -43,6 +43,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+}
+
 SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('JWT',), 
    'ACCESS_TOKEN_LIFETIME': timedelta(days=1) # changed the valid lifetime of the access token to one day instead of 5 minutes by default

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.db import models
-from .models import Collection, Product, Customer
+from .models import Collection, Product, Customer, Address
 from rest_framework import serializers
 
 
@@ -25,6 +25,15 @@ class ProductSerializer(serializers.ModelSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ['id', 'user_id', 'phone_number']
+        fields = ['id', 'user_id', 'username', 'phone_number']
 
     user_id = serializers.IntegerField(read_only=True)
+    username = serializers.CharField(source='user.username')
+    phone_number = serializers.CharField(source='user.phone_number')
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['id', 'user', 'address', 'city', 'description', 'zipcode', 'is_default']
+        read_only_fields = ['user']
+

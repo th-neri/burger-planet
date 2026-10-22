@@ -44,7 +44,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'phone_number']
+    list_display = ['user', 'user__email', 'user__phone_number']
     list_select_related = ['user']
     search_fields = ['user__email', 'user__username', 'phone_number']
     ordering = ['user__username']
@@ -80,3 +80,11 @@ class OrderAdmin(admin.ModelAdmin):
     list_editable = ['is_paid']
     list_filter = ['is_paid', 'placed_at']
     inlines = [OrderInLine]
+
+@admin.register(models.Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'address', 'city', 'description', 'zipcode', 'is_default']
+    list_select_related = ['user']
+    list_editable = ['is_default']
+    ordering = ['id', 'user']
+    

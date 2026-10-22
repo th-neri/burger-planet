@@ -30,19 +30,25 @@ class Product(models.Model):
         return self.title
 
 class Customer(models.Model):
-    phone_number = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
 
     def __str__(self):
         return f'{self.user.username}'
 
 class Address(models.Model):
-    description = models.TextField(blank=True, null=True)
     address = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
     zipcode = models.CharField(max_length=20)
+    description = models.TextField(blank=True, null=True)
     is_default = models.BooleanField(default=False)
     user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='addresses')
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            # if a customer already saved an address then set is_default=False for all other addresses belonging to them
+            Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.address}'

@@ -7,5 +7,6 @@ from ..models import Customer
 # it creates a customer record. basically django will know that it should call this signal everytime an user model is saved
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_customer_for_the_user(sender, instance, created, **kwargs):
+    # the boolean checks if a new instance was created and if yes, it creates a customer record
     if created:
-        Customer.objects.create(user=instance)
+        Customer.objects.create(user=instance, phone_number=getattr(instance, 'phone_number', ''))

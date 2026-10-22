@@ -6,8 +6,7 @@ from .models import User
 class UserAdmin(BaseUserAdmin):
     # standard editing view for an existing user
     fieldsets = (
-        (None, {'fields': ('email', 'username' 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'username')}),
+        (None, {'fields': ('email', 'username', 'phone_number', 'password')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -16,6 +15,6 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2'),
+            'fields': ('email', 'username', 'password1', 'password2', 'phone_number'),
         }),
     )
