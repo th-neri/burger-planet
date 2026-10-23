@@ -87,4 +87,7 @@ class AddressAdmin(admin.ModelAdmin):
     list_select_related = ['user']
     list_editable = ['is_default']
     ordering = ['id', 'user']
-    
+
+@admin.register(models.CartItem)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ['cart', 'product', 'quantity']   

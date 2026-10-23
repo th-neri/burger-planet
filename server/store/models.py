@@ -70,8 +70,11 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
 
 class Cart(models.Model):
-    id = models.UUIDField(primary_key=True, default=True)
+    id = models.UUIDField(primary_key=True, default=uuid4)
     placed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{str(self.id)} (Created: {self.placed_at.strftime('%Y-%m-%d %H:%M')})"
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
