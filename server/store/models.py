@@ -1,5 +1,8 @@
+import os
 from django.db import models
 from django.conf import settings
+from django.dispatch import receiver
+from django.db.models.signals import post_delete
 from django.core.validators import MinValueValidator
 from uuid import uuid4
 
@@ -24,10 +27,23 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(1)])
     last_update = models.DateTimeField(auto_now=True)
     collection = models.ForeignKey(Collection, on_delete=models.PROTECT, related_name='products')
-    image = models.ImageField(upload_to='products/images', blank=True, null=True)
 
     def __str__(self):
         return self.title
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products/images/')
+
+    def __str__(self):
+        return f'Image for: {self.product.title}'
+
+# implemented a signal so whenever an image is deleted, it gets erased from the media folder
+@receiver(post_delete, sender=ProductImage)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    if instance.image:
+        if os.path.isfile(instance.image.path):
+            os.remove(instance.image.path)
 
 class Customer(models.Model):
     phone_number = models.CharField(max_length=20)

@@ -4,6 +4,20 @@ from django.utils.html import format_html, urlencode
 from django.urls import reverse
 from . import models
 
+class CollectionFilter(admin.SimpleListFilter):
+    title = 'collection'
+    parameter_name = 'collection'
+
+    # fetch all the collections
+    def lookups(self, request, model_admin):
+        return [(collection.id, collection.title) for collection in models.Collection.objects.all()]
+
+    # if the admin selects a collection from the filter sidebar
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(collection_id=self.value())
+        return queryset
+
 @admin.register(models.Collection)
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ['title', 'product_count']
@@ -24,23 +38,30 @@ class CollectionAdmin(admin.ModelAdmin):
             product_count=Count('products')
         )
 
+class ProductImageInline(admin.TabularInline):
+    model = models.ProductImage
+    readonly_fields = ['thumbnail']
+    extra = 1  # shows 1 empty upload row by default so i can add more than one image
+
+    def thumbnail(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" width="300" style="height: auto; border-radius: 4px;" />', obj.image.url)
+        return '-'
+
 @admin.register(models.Product)
 class ProductAdmin(admin.ModelAdmin):
     autocomplete_fields = ['collection']
     prepopulated_fields = {'slug': ('title',)}
-    list_display = ['title', 'price', 'collection_title', 'thumbnail']
+    list_display = ['title', 'price', 'collection_title']
+    list_filter = [CollectionFilter]
     ordering = ['title']
     search_fields = ['title']
     list_editable = ['price']
     list_per_page = 15
+    inlines = [ProductImageInline]
 
     def collection_title(self, product):
         return product.collection.title
-
-    def thumbnail(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" style="object-fit: cover; border-radius: 5px;"/>', obj.image.url)
-        return '-'
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):

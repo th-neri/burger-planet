@@ -6,8 +6,8 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
-from .models import (Collection, Product, Customer, Address, OrderItem, Cart, CartItem, Order, OrderItem)
-from .serializers import (CollectionSerializer, ProductSerializer, CustomerSerializer, AddressSerializer,
+from .models import (Collection, Product, ProductImage, Customer, Address, OrderItem, Cart, CartItem, Order, OrderItem)
+from .serializers import (CollectionSerializer, ProductSerializer, ProductImageSerializer, CustomerSerializer, AddressSerializer,
                            CartSerializer, CartItemSerializer, AddItemToCartSerializer, UpdateCartItemSerializer)
 from .permissions import IsAdminOrReadOnly
 from .pagination import DefaultPagination
@@ -33,7 +33,7 @@ class ProductViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter 
     pagination_class = DefaultPagination
-    search_fields = ['title', 'description', 'collection']
+    search_fields = ['title', 'description']
     ordering_fields = ['price', 'last_update']
     permission_classes = [IsAdminOrReadOnly]
 
@@ -43,6 +43,17 @@ class ProductViewSet(ModelViewSet):
                             status=status.HTTP_405_METHOD_NOT_ALLOWED)
         return super().destroy(request, *args, **kwargs)
 
+class ProductImageViewSet(ModelViewSet):
+    serializer_class = ProductImageSerializer
+    permission_classes = [IsAdminUser]
+
+    # to return only the images of the selected product
+    def get_queryset(self):
+        return ProductImage.objects.filter(product_id=self.kwargs['product_pk'])
+
+    # to pass extra data from here to the ProductImage serializer
+    def get_serializer_context(self):
+        return {'product_id': self.kwargs['product_pk']}
 
 # CUSTOMER VIEW CLASSES
 class CustomerViewSet(ModelViewSet):
@@ -54,7 +65,6 @@ class CustomerViewSet(ModelViewSet):
         if self.request.method == 'GET':
             return [AllowAny()]
         return [IsAuthenticated()]
-
 
 # ADDRESS VIEW CLASSES
 class AddressViewSet(ModelViewSet):
