@@ -7,8 +7,9 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import status
 from .models import (Collection, Product, ProductImage, Customer, Address, OrderItem, Cart, CartItem, Order, OrderItem)
-from .serializers import (CollectionSerializer, ProductSerializer, ProductImageSerializer, CustomerSerializer, AddressSerializer,
-                           CartSerializer, CartItemSerializer, AddItemToCartSerializer, UpdateCartItemSerializer)
+from .serializers import (CollectionSerializer, ProductSerializer, ProductImageSerializer, CustomerSerializer, UpdateCustomerSerializer, 
+                          AddressSerializer, CartSerializer, CartItemSerializer, AddItemToCartSerializer, UpdateCartItemSerializer, 
+                          OrderSerializer, CreateOrderSerializer, UpdateOrderSerializer)
 from .permissions import IsAdminOrReadOnly
 from .pagination import DefaultPagination
 from .filters import ProductFilter
@@ -24,7 +25,6 @@ class CollectionViewSet(ModelViewSet):
             return Response({'error: Collection cannot be deleted because it is associated with product(s).'},
                             status=status.HTTP_405_METHOD_NOT_ALLOWED)
         return super.destroy(request, *args, **kwargs)
-
 
 # PRODUCT VIEW CLASSES
 class ProductViewSet(ModelViewSet):
@@ -57,23 +57,59 @@ class ProductImageViewSet(ModelViewSet):
 
 # CUSTOMER VIEW CLASSES
 class CustomerViewSet(ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+
+    def get_serializer_class(self):
+        if self.request.method == 'PATCH':
+            return UpdateCustomerSerializer
+        return CustomerSerializer
+
+    def get_permissions(self):
+        # admins can do anything
+        if self.request.user and self.request.user.is_staff:
+            return [IsAdminUser()]
+
+        # only for regular users
+        if self.request.method in ['GET', 'PATCH', 'DELETE']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]
+
+    # only admins can retrieve all the customers, regular customers can see only their own 
+    def get_queryset(self):
+        user = self.request.user
+
+        # admins can retrieve all users, regular customer can retrieve only their own
+        if user.is_staff:
+            return Customer.objects.all()
+        return Customer.objects.filter(user=user)
+
+    @action(detail=False, methods=['GET', 'PATCH'])
+    def me(self, request):
+        customer, _ = Customer.objects.get_or_create(user=request.user.id)
+        if request.method == 'GET':
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        elif request.method == 'PATCH':
+            serializer = self.get_serializer(customer, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            return Response(CustomerSerializer(customer).data)
 
     # any customer can retrieve customer object but only authenticated or admin users are able to update
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+    # def get_permissions(self):
+    #     if self.request.method == 'GET':
+    #         return [AllowAny()]
+    #     return [IsAuthenticated()]
 
 # ADDRESS VIEW CLASSES
 class AddressViewSet(ModelViewSet):
     serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
 
+    # only admins can retrieve all the addresses, regular customers can see only their own 
     def get_queryset(self):
         customer = self.request.user
-        # only admins can retrieve all the customers, regular customers can see only their own 
         if customer.is_staff:
             return Address.objects.all()
         customer = Customer.objects.get(user=self.request.user)
@@ -119,4 +155,36 @@ class CartItemViewSet(ModelViewSet):
             return UpdateCartItemSerializer
         return CartItemSerializer
 
+# ORDER VIEW CLASSES
+class OrderViewSet(ModelViewSet):
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
+    def get_queryset(self):
+        user = self.request.user
+
+        # only return all the orders if the user is admin
+        if user.is_staff:
+            return Order.objects.all()
+        # and if the user is not admin then it only returns the orders of this user
+        return Order.objects.filter(user_id=user.id)
+
+    # only able to update or delete if admin
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+    # implemented a create method from scratch using the current user ID to create an order
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(data=request.data, context={'user_id': self.request.user.id})
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(request.data)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        elif self.request.method == 'PATCH':
+            return UpdateOrderSerializer
+        return OrderSerializer

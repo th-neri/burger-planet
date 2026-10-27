@@ -5,9 +5,11 @@ from . import views
 router = routers.DefaultRouter()
 router.register('collections', views.CollectionViewSet)
 router.register('products', views.ProductViewSet, basename='products')
-router.register('customers', views.CustomerViewSet)
+router.register('customers', views.CustomerViewSet, basename='customers')
 router.register('addresses', views.AddressViewSet, basename='addresses')
 router.register('carts', views.CartViewSet)
+router.register('orders', views.OrderViewSet, basename='orders')
+router.urls
 
 # the cart lookup is the cart ID extracted from the ProductImageViewSet queryset and to access products/<product_id>/images
 # that way, the admin can add images to the product
